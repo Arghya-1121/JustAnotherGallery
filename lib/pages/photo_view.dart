@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:photo_view/photo_view.dart';
+import 'package:photu/services/share.dart';
+import 'package:photu/services/delete.dart';
 
 class PhotoViewPage extends StatefulWidget {
   const PhotoViewPage({
@@ -61,6 +62,30 @@ class _PhotoViewPageState extends State<PhotoViewPage> {
                     ),
                   ),
                 ),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        height: 100,
+        color: Colors.black,
+        child: Padding(
+          padding: EdgeInsets.all(10),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton(
+                onPressed: () async {
+                  await shareImage(file!);
+                },
+                icon: Icon(Icons.share, color: Colors.white),
+              ),
+              IconButton(
+                onPressed: () async {
+                  deleteAsset(widget.rawPhoto, context);
+                },
+                icon: Icon(Icons.delete, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
