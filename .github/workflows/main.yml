@@ -1,0 +1,58 @@
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+  push:
+    branches:
+      - main
+      - master
+
+name: "Build & Release"
+jobs:
+  build:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # Install Java (needed for Android SDK)
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '21.0.6+7'
+
+      # Install Flutter
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          architecture: x64
+
+      # ✅ Install Android SDK and required tools
+      - name: Install Android SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O cmdline-tools.zip
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          unzip cmdline-tools.zip -d $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH
+          yes | sdkmanager --licenses
+          sdkmanager --install "platforms;android-34" "build-tools;34.0.0"
+
+      # ✅ Accept Android licenses
+      - name: Accept Android Licenses
+        run: yes | flutter doctor --android-licenses
+
+      # ✅ Build the APK
+      - name: Build APK
+        run: flutter build apk --release --split-per-abi --target-platform android-arm,android-arm64,android-x64
+
+      # ✅ Push the built APK to GitHub Releases
+      - name: Push to Releases
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/app/outputs/apk/release/*"
+          tag: v1.0.${{ github.run_number }}
+          token: ${{ secrets.TOKEN }}
